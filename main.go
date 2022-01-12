@@ -19,18 +19,23 @@ func main() {
 		log.Fatal(fmt.Errorf("-lockedfile cannot be empty"))
 	}
 
-	mutex := lockedfile.MutexAt(*lockFile)
+	exitCode := executeLocked(*lockFile, args[0], args[1:])
+	os.Exit(exitCode)
+}
+
+func executeLocked(lockFile string, cmdName string, args []string) int {
+	mutex := lockedfile.MutexAt(lockFile)
 	unlock, err := mutex.Lock()
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer unlock()
 
-	cmd := exec.Command(args[0], args[1:]...)
+	cmd := exec.Command(cmdName, args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	cmd.Run()
-	os.Exit(cmd.ProcessState.ExitCode())
+	return cmd.ProcessState.ExitCode()
 }
